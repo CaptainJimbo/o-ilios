@@ -5,4 +5,4 @@ numpy>=1.26
 onnxruntime>=1.27
 pillow>=10.0
 requests>=2.32
-sunpy>=6.0
+sunpy[visualization]>=6.0
