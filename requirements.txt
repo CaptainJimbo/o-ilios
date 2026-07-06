@@ -2,3 +2,7 @@ sunpy[net,map]>=8.0
 matplotlib>=3.9
 scikit-image>=0.26
 requests>=2.32
+pillow>=10.0
+torch>=2.4
+torchvision>=0.19
+segmentation-models-pytorch>=0.5
