@@ -55,6 +55,18 @@ SHARP magnetograms + SWAN-SF), CME detection (project D).
 4. **Front-end + live feed:** The Living Sun page + conditions strip.
 5. **Deploy on AWS** (+ scheduled refresh of imagery/conditions).
 
+## Plugins to set up in this repo (decided 4/7/2026, not yet installed)
+
+```
+claude plugin enable frontend-design            # already on machine; THE plugin for The Living Sun UI
+claude plugin install fiftyone@claude-plugins-official           # CV dataset viz — de-risks label quality (step 1)
+claude plugin install huggingface-skills@claude-plugins-official # SDOML & solar datasets/backbones live on HF
+claude plugin install pyright-lsp@claude-plugins-official        # Python type checking QoL
+```
+
+Later, at deploy (step 5): `claude plugin enable aws-serverless`.
+Already enabled at user scope: playwright, chrome-devtools, context7, firecrawl.
+
 ## Working conventions (carried from other repos)
 
 - **Ask before deploying** anything with a slow feedback loop.
