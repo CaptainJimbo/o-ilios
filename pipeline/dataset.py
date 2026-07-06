@@ -30,6 +30,7 @@ from PIL import Image
 
 from pipeline.fetch import WAVELENGTHS, fetch_day
 from pipeline.labels import events_for_frame, query_spoca_events, rasterize
+from pipeline.preprocess import model_input
 
 log = logging.getLogger(__name__)
 
@@ -49,19 +50,6 @@ SPLITS: dict[str, list[date]] = {
 }
 
 EVERY_HOURS = 6  # 4 frames/day; tighter cadence just adds near-duplicates
-
-
-def _stretch(data: np.ndarray, a: float = 0.01) -> np.ndarray:
-    """Per-frame asinh stretch to uint8 (matches AsinhStretch(0.01))."""
-    top = np.percentile(data, 99.9)
-    x = np.clip(data, 0, top) / max(top, 1e-6)
-    y = np.arcsinh(x / a) / np.arcsinh(1 / a)
-    return (y * 255).astype(np.uint8)
-
-
-def _downsample_mean(img: np.ndarray) -> np.ndarray:
-    h, w = img.shape
-    return img.reshape(h // 2, 2, w // 2, 2).mean(axis=(1, 3))
 
 
 def assemble_split(split: str) -> None:
@@ -107,11 +95,7 @@ def assemble_split(split: str) -> None:
                     log.warning("%s: no SPoCA run nearby — skipped", sample_id)
                     continue
                 mask = rasterize(frame_events, ref)[::2, ::2]
-
-                rgb = np.stack(
-                    [_stretch(_downsample_mean(
-                        np.nan_to_num(maps[wl].data.astype(np.float32))))
-                     for wl in WAVELENGTHS], axis=-1)
+                rgb = model_input({wl: maps[wl].data for wl in WAVELENGTHS})
 
                 Image.fromarray(rgb).save(out / "images" / f"{sample_id}.png")
                 Image.fromarray(mask).save(out / "masks" / f"{sample_id}.png")
