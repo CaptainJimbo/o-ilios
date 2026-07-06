@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.python-version
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Data & models (large artifacts stay out of git)
+data/
+*.fits
+*.nc
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.onnx
+models/
+checkpoints/
+
+# Env / secrets
+.env
+.env.*
+*.pem
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Logs / caches
+*.log
+.cache/
+wandb/
+mlruns/
