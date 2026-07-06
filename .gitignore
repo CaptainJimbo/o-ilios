@@ -47,3 +47,6 @@ web/dist/
 # Browser-test scratch
 .playwright-mcp/
 /living-sun-*.png
+
+# Local planning notes (not for the public repo)
+/V2_NOTES.md
