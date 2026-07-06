@@ -33,7 +33,7 @@ import requests
 from astropy.io import fits
 from PIL import Image
 
-from pipeline.preprocess import model_input, stretch
+from pipeline.preprocess import model_input
 
 log = logging.getLogger(__name__)
 
@@ -61,14 +61,25 @@ def fetch_latest() -> tuple[dict[int, np.ndarray], str]:
     return arrays, obs_time
 
 
+def display_shade(data: np.ndarray) -> np.ndarray:
+    """Display-only intensity mapping, tuned to match NASA's punchy browse
+    renders (higher contrast than the model-input stretch, which must stay
+    frozen to what the U-Net was trained on)."""
+    data = np.nan_to_num(data)
+    black = np.percentile(data, 25)  # quiet-sun floor -> deep shadows
+    white = np.percentile(data, 99.85)
+    x = np.clip((data - black) / max(white - black, 1e-6), 0, 1)
+    y = np.arcsinh(x / 0.06) / np.arcsinh(1 / 0.06)
+    return y**1.15  # mild gamma: darker mids, gleaming highlights
+
+
 def render_suns(arrays: dict[int, np.ndarray], out_dir: Path) -> None:
     """1024px colorized PNGs with the official AIA palettes, north up."""
     import sunpy.visualization.colormaps  # registers sdoaia* cmaps  # noqa: F401
 
     for wl, data in arrays.items():
         cmap = matplotlib.colormaps[f"sdoaia{wl}"]
-        shade = stretch(np.nan_to_num(data)).astype(np.float32) / 255.0
-        rgb = (cmap(shade)[..., :3] * 255).astype(np.uint8)
+        rgb = (cmap(display_shade(data))[..., :3] * 255).astype(np.uint8)
         # FITS row 0 is south; PNG row 0 is top — flip to put north up.
         Image.fromarray(np.flipud(rgb)).save(out_dir / f"sun_{wl}.png")
 

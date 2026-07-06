@@ -286,6 +286,104 @@ body {
   cursor: ew-resize;
 }
 
+/* ---- mode switch + time-lapse ---- */
+
+.mode-switch {
+  display: flex;
+  gap: 0.4rem;
+  padding-bottom: 1.4rem;
+}
+
+.mode-switch button {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  color: var(--ash);
+  background: none;
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+}
+
+.mode-switch button[data-active='true'] {
+  color: var(--void);
+  background: var(--corona-gold);
+  border-color: var(--corona-gold);
+}
+
+.mode-switch button:focus-visible {
+  outline: 1px solid var(--corona-gold);
+  outline-offset: 2px;
+}
+
+.timelapse-view {
+  position: relative;
+  width: min(72vmin, 100%);
+  aspect-ratio: 1;
+}
+
+.timelapse-view img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}
+
+.timelapse-mask {
+  mix-blend-mode: screen;
+}
+
+.timelapse-controls {
+  position: absolute;
+  bottom: 0.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(72vmin, 90%);
+}
+
+.timelapse-caption {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  font-family: var(--font-mono);
+  margin-bottom: 0.4rem;
+}
+
+.timelapse-when {
+  font-size: 0.8rem;
+}
+
+.timelapse-stats {
+  font-size: 0.66rem;
+  color: var(--ash);
+}
+
+.timelapse-controls input[type='range'] {
+  width: 100%;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--hairline);
+  outline-offset: 4px;
+}
+
+.timelapse-controls input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--corona-gold);
+  cursor: ew-resize;
+}
+
+.timelapse-loading {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ash);
+}
+
 /* ---- conditions strip ---- */
 
 .conditions {

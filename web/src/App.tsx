@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Conditions from './Conditions'
 import SunCanvas, { type SunView } from './SunCanvas'
+import Timelapse from './Timelapse'
 
 const BASE = import.meta.env.BASE_URL
 
@@ -18,6 +19,7 @@ const WAVELENGTH_STOPS = [
 
 export default function App() {
   const [meta, setMeta] = useState<Meta | null>(null)
+  const [mode, setMode] = useState<'live' | 'timelapse'>('live')
   const [mix, setMix] = useState(1) // start on 193A, where the story is
   const [wipe, setWipe] = useState(0)
   const [showCH, setShowCH] = useState(true)
@@ -81,35 +83,52 @@ export default function App() {
 
       <main className="sun-stage">
         <div className="sun-halo" aria-hidden="true" />
-        <SunCanvas view={view} base={BASE} />
+        {mode === 'live'
+          ? <SunCanvas view={view} base={BASE} />
+          : <Timelapse base={BASE} />}
       </main>
 
       <section className="instruments">
-        <div className="spectrum">
-          <input
-            type="range" min={0} max={2} step={0.01} value={mix}
-            onChange={(e) => setMix(parseFloat(e.target.value))}
-            aria-label="Wavelength"
-          />
-          <div className="spectrum-scale" aria-hidden="true">
-            {WAVELENGTH_STOPS.map((s) => (
-              <button key={s.label} className="spectrum-stop"
-                data-active={Math.abs(mix - s.at) < 0.34}
-                onClick={() => setMix(s.at)} tabIndex={-1}>
-                <span className="stop-label">{s.label}</span>
-                <span className="stop-temp">{s.temp}</span>
-              </button>
-            ))}
-          </div>
+        <div className="mode-switch" role="tablist" aria-label="View mode">
+          <button role="tab" aria-selected={mode === 'live'}
+            data-active={mode === 'live'} onClick={() => setMode('live')}>
+            LIVE
+          </button>
+          <button role="tab" aria-selected={mode === 'timelapse'}
+            data-active={mode === 'timelapse'}
+            onClick={() => setMode('timelapse')}>
+            TIME-LAPSE
+          </button>
         </div>
-        <label className="wipe-control">
-          <span className="cond-key">WIPE&nbsp;RAW</span>
-          <input
-            type="range" min={0} max={1} step={0.01} value={wipe}
-            onChange={(e) => setWipe(parseFloat(e.target.value))}
-            aria-label="Reveal raw image from the left"
-          />
-        </label>
+        {mode === 'live' && (
+          <>
+            <div className="spectrum">
+              <input
+                type="range" min={0} max={2} step={0.01} value={mix}
+                onChange={(e) => setMix(parseFloat(e.target.value))}
+                aria-label="Wavelength"
+              />
+              <div className="spectrum-scale" aria-hidden="true">
+                {WAVELENGTH_STOPS.map((s) => (
+                  <button key={s.label} className="spectrum-stop"
+                    data-active={Math.abs(mix - s.at) < 0.34}
+                    onClick={() => setMix(s.at)} tabIndex={-1}>
+                    <span className="stop-label">{s.label}</span>
+                    <span className="stop-temp">{s.temp}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <label className="wipe-control">
+              <span className="cond-key">WIPE&nbsp;RAW</span>
+              <input
+                type="range" min={0} max={1} step={0.01} value={wipe}
+                onChange={(e) => setWipe(parseFloat(e.target.value))}
+                aria-label="Reveal raw image from the left"
+              />
+            </label>
+          </>
+        )}
       </section>
 
       <Conditions />
