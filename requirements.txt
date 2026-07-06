@@ -6,3 +6,5 @@ pillow>=10.0
 torch>=2.4
 torchvision>=0.19
 segmentation-models-pytorch>=0.5
+onnx>=1.22
+onnxruntime>=1.27
