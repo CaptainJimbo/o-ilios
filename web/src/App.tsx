@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Conditions from './Conditions'
+import FlareWatch, { type DiskGeometry, type FlareData } from './FlareWatch'
 import SunCanvas, { type SunView } from './SunCanvas'
 import Timelapse from './Timelapse'
 
@@ -9,6 +10,7 @@ interface Meta {
   observation_time: string
   coronal_hole_pct: number
   active_region_pct: number
+  disk?: DiskGeometry
 }
 
 const WAVELENGTH_STOPS = [
@@ -19,18 +21,23 @@ const WAVELENGTH_STOPS = [
 
 export default function App() {
   const [meta, setMeta] = useState<Meta | null>(null)
+  const [flares, setFlares] = useState<FlareData | null>(null)
   const [mode, setMode] = useState<'live' | 'timelapse'>('live')
   const [mix, setMix] = useState(1) // start on 193A, where the story is
   const [wipe, setWipe] = useState(0)
   const [showCH, setShowCH] = useState(true)
   const [showAR, setShowAR] = useState(true)
+  const [showFlares, setShowFlares] = useState(true)
 
   useEffect(() => {
-    const load = () =>
+    const load = () => {
       fetch(`${BASE}live/meta.json`)
+        .then((r) => r.json()).then(setMeta).catch(() => {})
+      fetch(`${BASE}live/flares.json`)
         .then((r) => r.json())
-        .then(setMeta)
-        .catch(() => {})
+        .then((d: FlareData) => setFlares(d.regions ? d : null))
+        .catch(() => setFlares(null))
+    }
     load()
     const timer = setInterval(load, 5 * 60 * 1000)
     return () => clearInterval(timer)
@@ -78,14 +85,47 @@ export default function App() {
           <dd>U-Net · AIA 171+193+304</dd>
           <dt>TEST IOU</dt>
           <dd>CH 0.60 · AR 0.41</dd>
+          {flares && (
+            <>
+              <dt>FLARE WATCH · 24H</dt>
+              <dd>
+                <label className="seg-toggle">
+                  <input type="checkbox" checked={showFlares}
+                    onChange={(e) => setShowFlares(e.target.checked)} />
+                  M+ anywhere{' '}
+                  {flares.full_disk.p_m24_any < 0.005
+                    ? '<1%' : `${Math.round(flares.full_disk.p_m24_any * 100)}%`}
+                </label>
+                <span className="flare-noaa-line">
+                  NOAA says{' '}
+                  {flares.full_disk.noaa_p_m24_any === null
+                    ? '—'
+                    : `${Math.round(flares.full_disk.noaa_p_m24_any * 100)}%`}
+                  {flares.staleness_min !== null
+                    && flares.staleness_min > 240 && ' · STALE'}
+                </span>
+                <span className="flare-noaa-line">
+                  LightGBM · TSS {flares.model.test_tss_p5.toFixed(2)} · BSS{' '}
+                  {flares.model.test_bss_p5.toFixed(2)}
+                </span>
+              </dd>
+            </>
+          )}
         </dl>
       </aside>
 
       <main className="sun-stage">
         <div className="sun-halo" aria-hidden="true" />
-        {mode === 'live'
-          ? <SunCanvas view={view} base={BASE} />
-          : <Timelapse base={BASE} />}
+        {mode === 'live' ? (
+          <div className="sun-frame">
+            <SunCanvas view={view} base={BASE} />
+            {showFlares && flares && meta?.disk && flares.regions.length > 0 && (
+              <FlareWatch data={flares} disk={meta.disk} />
+            )}
+          </div>
+        ) : (
+          <Timelapse base={BASE} />
+        )}
       </main>
 
       <section className="instruments">

@@ -156,11 +156,84 @@ body {
   padding: 0.5rem;
 }
 
-.sun-canvas {
+.sun-frame {
+  position: relative;
   width: min(78vmin, 100%);
   aspect-ratio: 1;
   max-height: 100%;
   animation: dawn 2.4s ease-out both;
+}
+
+.sun-canvas {
+  width: 100%;
+  aspect-ratio: 1;
+  display: block;
+}
+
+/* ---- Flare Watch badges ---- */
+
+.flare-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.flare-badge {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.flare-ring {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 190, 0, 0.75);
+  box-shadow: 0 0 10px rgba(255, 190, 0, 0.35);
+}
+
+.flare-alert .flare-ring {
+  border-color: var(--ch-cyan);
+  box-shadow: 0 0 14px var(--ch-cyan);
+  animation: flare-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes flare-pulse {
+  50% {
+    box-shadow: 0 0 26px var(--ch-cyan);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flare-alert .flare-ring {
+    animation: none;
+  }
+}
+
+.flare-label {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  color: var(--paper);
+  background: rgba(10, 7, 9, 0.65);
+  padding: 1px 5px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.flare-label b {
+  color: var(--ar-amber);
+  font-weight: 500;
+}
+
+.flare-noaa-line {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--ash);
+  padding-top: 0.1rem;
 }
 
 .sun-halo {
@@ -184,7 +257,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sun-canvas,
+  .sun-frame,
   .sun-halo {
     animation: none;
   }
@@ -448,9 +521,10 @@ body {
       'conditions';
   }
 
-  .sun-canvas {
+  .sun-frame {
     /* max-height beats aspect-ratio when the row collapses, squashing the
-       square WebGL buffer into an ellipse — width alone drives the size here */
+       square WebGL buffer into an ellipse — width alone drives the size here
+       (sizing lives on the frame now; the canvas fills it) */
     max-height: none;
   }
 
