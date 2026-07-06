@@ -42,6 +42,8 @@ failure modes stated plainly: **[EVALUATION.md](EVALUATION.md)**.
 pipeline/   AIA fetch (JSOC synoptic archive) · SPoCA/HEK label rasterization
             · dataset assembly · time-lapse generation
 model/      threshold baseline · U-Net training (MPS) · evaluation · ONNX export
+flare/      v2: SWAN-SF tabular pipeline · baselines · LightGBM + calibration
+            · NRT SHARP inference · forecast ledger
 worker/     scheduled job: latest sun in -> static artifacts out (no servers)
 web/        React + Vite + WebGL2 (shader-blended wavelength morph)
 ```
@@ -78,12 +80,21 @@ cd web && npm install && npm run dev                          # the Living Sun
 Data (SDO/AIA via JSOC, HEK/SPoCA, NOAA SWPC) is public and fetched on demand;
 nothing large lives in git.
 
-## Roadmap
+## v2 — Flare Watch (live)
 
-v2 — **Flare Forecaster**: per-active-region probability of an M/X-class flare
-in the next 24 h from SHARP magnetic-complexity features (SWAN-SF benchmark,
-TSS + calibration evaluation), rendered as badges on the same disk. Spec'd in
-[CLAUDE.md](CLAUDE.md), queued.
+The disk now carries **flare-probability badges**: a LightGBM model over
+near-real-time SHARP magnetic-complexity keywords emits calibrated
+P(M+ flare within 24 h) per active region, alongside **NOAA's own forecaster
+numbers for the same regions** — and a public, append-only
+[forecast ledger](https://captainjimbo.github.io/o-ilios/live/ledger.json)
+records every day's prediction against what the sun actually did.
+
+Trained on the SWAN-SF benchmark with a strict cross-partition protocol
+(random splits leak to TSS ≈ 0.9 by memorization; we verified zero
+active-region overlap between train and test). Final untouched-partition
+score: **TSS 0.861, Brier skill +0.267 vs climatology** — and the write-up
+explains why the second number is the one that matters:
+**[EVALUATION-V2.md](EVALUATION-V2.md)**.
 
 ## Credits & license
 

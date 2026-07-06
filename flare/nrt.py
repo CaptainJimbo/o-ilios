@@ -194,6 +194,11 @@ def main() -> None:
     log.info("flares.json: %d regions, P(M+|24h anywhere)=%.3f, staleness %s min",
              len(forecast["regions"]), forecast["full_disk"]["p_m24_any"],
              forecast["staleness_min"])
+    try:
+        from flare.ledger import update as update_ledger
+        update_ledger(forecast)
+    except Exception:
+        log.exception("ledger update failed — forecast artifact unaffected")
 
 
 if __name__ == "__main__":
