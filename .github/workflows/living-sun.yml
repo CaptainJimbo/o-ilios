@@ -48,6 +48,17 @@ jobs:
       - name: Run inference on the latest sun
         run: python -m worker.run
 
+      # v2: flare probabilities from NRT SHARP keywords. Additive artifact
+      # (flares.json); must never break the v1 deploy, hence soft-fail here
+      # on top of the module's own soft-fail.
+      - name: Flare forecast
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download model --pattern flare_model.joblib --dir data/v2_model
+          python -m flare.nrt
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22

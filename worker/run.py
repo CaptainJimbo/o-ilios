@@ -46,10 +46,13 @@ OUT_DIR = Path("web/public/live")
 MASK_COLORS = {1: (0, 230, 255, 110), 2: (255, 190, 0, 110)}
 
 
-def fetch_latest() -> tuple[dict[int, np.ndarray], str]:
-    """Latest synoptic FITS arrays by wavelength + observation ISO time."""
+def fetch_latest() -> tuple[dict[int, np.ndarray], str, dict]:
+    """Latest synoptic FITS arrays by wavelength, observation ISO time, and
+    disk geometry as image fractions (north-up frame, for overlay layers
+    like the flare badges)."""
     arrays: dict[int, np.ndarray] = {}
     obs_time = ""
+    disk: dict = {}
     for wl in WAVELENGTHS:
         resp = requests.get(f"{MOSTRECENT}/AIAsynoptic{wl:04d}.fits", timeout=60)
         resp.raise_for_status()
@@ -57,8 +60,18 @@ def fetch_latest() -> tuple[dict[int, np.ndarray], str]:
             hdu = hdul[-1]
             arrays[wl] = np.asarray(hdu.data, dtype=np.float32)
             obs_time = obs_time or str(hdu.header.get("DATE-OBS", ""))
+            if wl == 193:
+                h = hdu.header
+                size = arrays[wl].shape[0]
+                # CRPIX is 1-indexed; the PNGs are flipud'd (north up), so
+                # the row fraction flips.
+                disk = {
+                    "cx_frac": round((h["CRPIX1"] - 0.5) / size, 5),
+                    "cy_frac": round(1 - (h["CRPIX2"] - 0.5) / size, 5),
+                    "r_frac": round(h["RSUN_OBS"] / abs(h["CDELT1"]) / size, 5),
+                }
     log.info("fetched %s wavelengths, obs time %s", len(arrays), obs_time)
-    return arrays, obs_time
+    return arrays, obs_time, disk
 
 
 def display_shade(data: np.ndarray) -> np.ndarray:
@@ -96,7 +109,7 @@ def main() -> None:
                         format="%(levelname)s %(name)s: %(message)s")
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    arrays, obs_time = fetch_latest()
+    arrays, obs_time, disk = fetch_latest()
     x = model_input(arrays).astype(np.float32) / 255.0
     x = x.transpose(2, 0, 1)[None]
 
@@ -110,6 +123,7 @@ def main() -> None:
     meta = {
         "observation_time": obs_time,
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "disk": disk,
         "coronal_hole_pct": round(float(np.mean(mask == 1)) * 100, 2),
         "active_region_pct": round(float(np.mean(mask == 2)) * 100, 2),
         "source": "SDO/AIA via JSOC synoptic (NASA); segmentation: o-ilios U-Net",

@@ -6,3 +6,8 @@ onnxruntime>=1.27
 pillow>=10.0
 requests>=2.32
 sunpy[visualization]>=6.0
+
+# v2 flare forecast (flare/nrt.py)
+joblib>=1.4
+lightgbm>=4.6
+scikit-learn>=1.7
