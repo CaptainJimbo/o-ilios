@@ -337,6 +337,10 @@ body {
   }
 
   .stage {
+    /* the desktop layout is a fixed full-viewport dashboard; on phones the five
+       stacked rows must share that height, crushing the sun row — let the page
+       grow and scroll instead */
+    height: auto;
     grid-template-columns: 1fr;
     grid-template-areas:
       'masthead'
@@ -344,6 +348,12 @@ body {
       'telemetry'
       'instruments'
       'conditions';
+  }
+
+  .sun-canvas {
+    /* max-height beats aspect-ratio when the row collapses, squashing the
+       square WebGL buffer into an ellipse — width alone drives the size here */
+    max-height: none;
   }
 
   .instruments {
