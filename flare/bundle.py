@@ -29,6 +29,7 @@ from sklearn.isotonic import IsotonicRegression
 from flare.baselines import load_xy
 from flare.data import FEATURES
 from flare.metrics import best_threshold, classification_report
+from flare.predict import predict_bundle
 from flare.train import PARAMS, reliability_plot
 
 log = logging.getLogger(__name__)
@@ -36,14 +37,6 @@ log = logging.getLogger(__name__)
 MODEL_DIR = Path("data/v2_model")
 EVAL_DIR = Path("data/v2_eval")
 BUNDLE = MODEL_DIR / "flare_model.joblib"
-
-
-def predict_bundle(bundle: dict, x: np.ndarray) -> np.ndarray:
-    """The one inference entry point — worker code must use this."""
-    x = x.astype(np.float32).copy()
-    idx = np.where(np.isnan(x))
-    x[idx] = np.take(np.asarray(bundle["impute_medians"]), idx[1])
-    return bundle["calibrator"].predict(bundle["booster"].predict(x))
 
 
 def main() -> None:

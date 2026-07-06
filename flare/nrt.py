@@ -32,7 +32,8 @@ import joblib
 import numpy as np
 import requests
 
-from flare.data import FEATURES
+from flare.features import FEATURES
+from flare.predict import predict_bundle
 
 log = logging.getLogger(__name__)
 
@@ -133,7 +134,6 @@ def build_forecast() -> dict:
                 or np.isnan(x).sum() > len(FEATURES) // 2):
             skipped += 1
             continue
-        from flare.bundle import predict_bundle
         # Floor at 0.1%: isotonic maps empty low bins to exactly 0, and a
         # literal "0.000% chance of a flare" claims more than data can.
         p_m24 = max(float(predict_bundle(bundle, x)[0]), 0.001)

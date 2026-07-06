@@ -30,12 +30,7 @@ log = logging.getLogger(__name__)
 SWANSF_DIR = Path("data/swansf")
 OUT_DIR = Path("data/swansf/tabular")
 
-# SHARP keywords present BOTH in SWAN-SF and in hmi.sharp_cea_720s_nrt.
-FEATURES = [
-    "TOTUSJH", "TOTPOT", "TOTUSJZ", "ABSNJZH", "SAVNCPP", "USFLUX",
-    "MEANPOT", "R_VALUE", "MEANSHR", "SHRGT45", "MEANGAM", "MEANGBT",
-    "MEANGBZ", "MEANGBH", "MEANJZH", "MEANJZD", "MEANALP",
-]
+from flare.features import FEATURES  # noqa: F401  (re-export; see features.py)
 
 CLASS_ORDER = {"FQ": 0, "B": 1, "C": 2, "M": 3, "X": 4}
 _NAME_RE = re.compile(r"([A-Z]+)[\d.]*(?:@\d+)?[:_]")
