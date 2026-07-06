@@ -1,0 +1,4 @@
+sunpy[net,map]>=8.0
+matplotlib>=3.9
+scikit-image>=0.26
+requests>=2.32
