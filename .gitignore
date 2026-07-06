@@ -39,3 +39,11 @@ checkpoints/
 .cache/
 wandb/
 mlruns/
+
+# Frontend
+node_modules/
+web/dist/
+
+# Browser-test scratch
+.playwright-mcp/
+/living-sun-*.png
