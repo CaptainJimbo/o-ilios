@@ -16,10 +16,13 @@ evaluates models, and can build a stunning front-end around them.
 
 ## What we're building (decided)
 
-Project "B + a slice of C" from the solar options:
+Project "B + a slice of C" from the solar options. Architecture decisions locked
+6/7/2026 — see `ARCHITECTURE.md` (React+WebGL frontend, local MPS training,
+scheduled-inference-to-static-artifacts serving, local → GH Pages → AWS hosting).
 
 1. **Solar Feature Segmenter (core ML)** — full-disk SDO/AIA EUV images →
-   pixel-precise masks for **coronal holes, active regions, sunspots**.
+   pixel-precise masks for **coronal holes, active regions** (sunspots deferred
+   to v2 — they need HMI continuum, a second data source + catalog).
    U-Net family, PyTorch. This is the thesis-skillset showcase (segmentation).
 2. **The Living Sun (front-end, the stunner)** —
    - Full-screen glowing SDO sun as hero, updated from NASA's feed.
