@@ -24,8 +24,7 @@ import logging
 from pathlib import Path
 
 import numpy as np
-from skimage.morphology import (binary_closing, binary_opening, disk,
-                                remove_small_objects)
+from skimage.morphology import closing, disk, opening, remove_small_objects
 
 from model.data import CHANNELS, Sample, load_split
 from model.metrics import iou_per_class
@@ -46,9 +45,9 @@ def predict(sample: Sample, ch_frac: float, ar_frac: float) -> np.ndarray:
         (2, i193 > ar_frac * median),
     ):
         region &= sample.disk
-        region = binary_opening(region, disk(2))
-        region = binary_closing(region, disk(4))
-        region = remove_small_objects(region, MIN_BLOB_PX)
+        region = opening(region, disk(2))
+        region = closing(region, disk(4))
+        region = remove_small_objects(region, max_size=MIN_BLOB_PX)
         pred[region] = class_id
     return pred
 
