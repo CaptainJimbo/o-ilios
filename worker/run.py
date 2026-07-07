@@ -46,15 +46,32 @@ OUT_DIR = Path("web/public/live")
 MASK_COLORS = {1: (0, 230, 255, 110), 2: (255, 190, 0, 110)}
 
 
-def _assert_sane_frame(wl: int, data: np.ndarray) -> None:
+def _assert_sane_frame(wl: int, data: np.ndarray, header) -> None:
     """Refuse half-written frames. JSOC rewrites mostrecent/ every ~15 min;
     a fetch racing the writer can read garbage (observed 2026-07-07: a full
-    deploy of static). A real full-disk EUV frame has a bright disk against
-    dark corners; noise does not. Raising here aborts the CI run, which
-    keeps the previous good deploy live until the next cron self-heals."""
+    deploy of static). Raising here aborts the CI run, which keeps the
+    previous good deploy live until the next cron self-heals.
+
+    Two independent checks:
+    1. Header self-consistency — the pipeline records DATAMEDN when it
+       writes the file; a torn file is a header from one moment stapled to
+       data from another, so recomputed stats can't agree. (Loose factor:
+       the header stats come from the 4k parent, we hold the 1k rebin.)
+    2. Disk geometry — a real full-disk EUV frame has a bright disk against
+       dark corners; decoded garbage doesn't. Backstop in case a torn file
+       happens to keep both header and stats plausible."""
     if data.shape != (1024, 1024):
         raise ValueError(f"AIA {wl}: unexpected shape {data.shape}")
     data = np.nan_to_num(data)
+
+    header_median = float(header.get("DATAMEDN", 0) or 0)
+    if header_median > 0:
+        actual = float(np.median(data))
+        if not (header_median / 3 <= max(actual, 1e-3) <= header_median * 3):
+            raise ValueError(
+                f"AIA {wl}: header claims median {header_median:.0f} but "
+                f"data says {actual:.0f} — torn/half-written file")
+
     center = float(data[412:612, 412:612].mean())
     corners = float(np.mean([data[:100, :100].mean(), data[:100, -100:].mean(),
                              data[-100:, :100].mean(), data[-100:, -100:].mean()]))
@@ -77,7 +94,7 @@ def fetch_latest() -> tuple[dict[int, np.ndarray], str, dict]:
         with fits.open(io.BytesIO(resp.content)) as hdul:
             hdu = hdul[-1]
             arrays[wl] = np.asarray(hdu.data, dtype=np.float32)
-            _assert_sane_frame(wl, arrays[wl])
+            _assert_sane_frame(wl, arrays[wl], hdu.header)
             obs_time = obs_time or str(hdu.header.get("DATE-OBS", ""))
             if wl == 193:
                 h = hdu.header
