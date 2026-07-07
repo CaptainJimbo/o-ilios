@@ -31,9 +31,12 @@ export default function App() {
 
   useEffect(() => {
     const load = () => {
-      fetch(`${BASE}live/meta.json`)
+      // Cache-bust: Pages serves max-age=600, which can outlive a redeploy
+      // and pin users to a stale (or degraded) artifact for 10 minutes.
+      const bust = `?t=${Date.now()}`
+      fetch(`${BASE}live/meta.json${bust}`)
         .then((r) => r.json()).then(setMeta).catch(() => {})
-      fetch(`${BASE}live/flares.json`)
+      fetch(`${BASE}live/flares.json${bust}`)
         .then((r) => r.json())
         // Schema-strict: a soft-failed worker can publish a degraded file
         // ({regions: [], error: ...}); bad data must never unmount the app.
