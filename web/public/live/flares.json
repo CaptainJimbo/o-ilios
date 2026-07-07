@@ -1,0 +1,129 @@
+{
+ "generated_at": "2026-07-07T10:20:18.690294+00:00",
+ "t_rec_utc": "2026-07-07T09:11:23+00:00",
+ "staleness_min": 68.9,
+ "regions": [
+  {
+   "harpnum": 13728,
+   "noaa_ar": 14482,
+   "lat": -8.49,
+   "lon": -47.28,
+   "fx": -0.7267,
+   "fy": -0.1887,
+   "p_m24": 0.041,
+   "alert": true,
+   "quality": "0x00000400",
+   "noaa_p_c": 65,
+   "noaa_p_m": 25,
+   "noaa_p_x": 5
+  },
+  {
+   "harpnum": 13712,
+   "noaa_ar": null,
+   "lat": 27.43,
+   "lon": 43.18,
+   "fx": 0.6074,
+   "fy": 0.42,
+   "p_m24": 0.001,
+   "alert": false,
+   "quality": "0x00000400"
+  },
+  {
+   "harpnum": 13714,
+   "noaa_ar": null,
+   "lat": 22.99,
+   "lon": 19.22,
+   "fx": 0.303,
+   "fy": 0.3364,
+   "p_m24": 0.001,
+   "alert": false,
+   "quality": "0x00000400"
+  },
+  {
+   "harpnum": 13718,
+   "noaa_ar": 14485,
+   "lat": -12.9,
+   "lon": 3.33,
+   "fx": 0.0567,
+   "fy": -0.2826,
+   "p_m24": 0.001,
+   "alert": false,
+   "quality": "0x00000400",
+   "noaa_p_c": 10,
+   "noaa_p_m": 1,
+   "noaa_p_x": 1
+  },
+  {
+   "harpnum": 13723,
+   "noaa_ar": null,
+   "lat": -13.4,
+   "lon": -9.15,
+   "fx": -0.1547,
+   "fy": -0.2904,
+   "p_m24": 0.001,
+   "alert": false,
+   "quality": "0x00000400"
+  },
+  {
+   "harpnum": 13725,
+   "noaa_ar": 14481,
+   "lat": 13.98,
+   "lon": -15.51,
+   "fx": -0.2596,
+   "fy": 0.1835,
+   "p_m24": 0.001,
+   "alert": false,
+   "quality": "0x00000400",
+   "noaa_p_c": 5,
+   "noaa_p_m": 1,
+   "noaa_p_x": 1
+  },
+  {
+   "harpnum": 13731,
+   "noaa_ar": 14484,
+   "lat": 13.05,
+   "lon": 13.43,
+   "fx": 0.2263,
+   "fy": 0.167,
+   "p_m24": 0.001,
+   "alert": false,
+   "quality": "0x00000400",
+   "noaa_p_c": 0,
+   "noaa_p_m": 0,
+   "noaa_p_x": 0
+  },
+  {
+   "harpnum": 13736,
+   "noaa_ar": null,
+   "lat": -17.76,
+   "lon": 35.49,
+   "fx": 0.5529,
+   "fy": -0.3522,
+   "p_m24": 0.001,
+   "alert": false,
+   "quality": "0x00000400"
+  },
+  {
+   "harpnum": 13737,
+   "noaa_ar": null,
+   "lat": 8.74,
+   "lon": -48.36,
+   "fx": -0.7386,
+   "fy": 0.1113,
+   "p_m24": 0.001,
+   "alert": false,
+   "quality": "0x00000400"
+  }
+ ],
+ "regions_skipped_limb_or_unusable": 1,
+ "full_disk": {
+  "p_m24_any": 0.0486,
+  "noaa_p_m24_any": 0.2649
+ },
+ "model": {
+  "threshold": 0.029312288613303268,
+  "provenance": "SWAN-SF fit P1-P3, calibrated P4, tested P5; 17 NRT-available SHARP keywords, last-value features",
+  "test_tss_p5": 0.861,
+  "test_bss_p5": 0.267
+ }
+}

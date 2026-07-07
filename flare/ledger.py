@@ -34,6 +34,15 @@ MAX_DAYS = 400
 def fetch_existing() -> list[dict]:
     try:
         rows = requests.get(LIVE_LEDGER, timeout=30).json()
+        if isinstance(rows, list) and rows:
+            return rows
+    except Exception:
+        pass
+    # Live copy missing (first run, or a failed deploy dropped it) — fall
+    # back to the checkout's seed so history survives interruptions.
+    try:
+        rows = json.loads(OUT_PATH.read_text())
+        log.info("using local ledger seed (%d rows)", len(rows))
         return rows if isinstance(rows, list) else []
     except Exception:
         log.info("no existing ledger (first run?)")

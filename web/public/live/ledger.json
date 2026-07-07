@@ -1,0 +1,17 @@
+[
+ {
+  "date": "2026-07-06",
+  "p_any": 0.003,
+  "noaa_p_any": null,
+  "n_regions": 3,
+  "outcome_m_plus": false,
+  "strongest": null,
+  "flares": []
+ },
+ {
+  "date": "2026-07-07",
+  "p_any": 0.0486,
+  "noaa_p_any": 0.2649,
+  "n_regions": 9
+ }
+]

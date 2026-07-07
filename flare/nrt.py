@@ -175,19 +175,47 @@ def build_forecast() -> dict:
     }
 
 
+def _preserve_live_artifacts() -> None:
+    """Failure path. CI checkouts are fresh, so 'keep the previous file'
+    means fetching what the site currently serves and re-emitting it —
+    otherwise a failed run REPLACES good artifacts with nothing (observed
+    2026-07-07: a schema-incomplete stub crashed the frontend, and the
+    ledger vanished from the deploy)."""
+    live = "https://captainjimbo.github.io/o-ilios/live"
+    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    for name, path in (("flares.json", OUT_PATH),
+                       ("ledger.json", OUT_PATH.parent / "ledger.json")):
+        try:
+            data = requests.get(f"{live}/{name}", timeout=30).json()
+            if name == "flares.json" and "full_disk" not in data:
+                raise ValueError("live copy is schema-incomplete")
+            if name == "flares.json":
+                data["stale"] = True
+            path.write_text(json.dumps(data, indent=1))
+            log.info("preserved live %s", name)
+        except Exception:
+            log.warning("could not preserve %s from live", name)
+            if not path.exists() and name == "flares.json":
+                # Last resort: schema-COMPLETE empty forecast.
+                path.write_text(json.dumps({
+                    "generated_at": datetime.now(timezone.utc).isoformat(),
+                    "t_rec_utc": None, "staleness_min": None,
+                    "regions": [], "regions_skipped_limb_or_unusable": 0,
+                    "full_disk": {"p_m24_any": 0.0, "noaa_p_m24_any": None},
+                    "model": {"threshold": 0.0, "provenance": "unavailable",
+                              "test_tss_p5": 0.861, "test_bss_p5": 0.267},
+                    "error": "forecast unavailable",
+                }))
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO,
                         format="%(levelname)s %(name)s: %(message)s")
     try:
         forecast = build_forecast()
     except Exception:
-        log.exception("flare forecast failed — keeping previous artifact")
-        if not OUT_PATH.exists():
-            OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-            OUT_PATH.write_text(json.dumps({
-                "generated_at": datetime.now(timezone.utc).isoformat(),
-                "regions": [], "error": "forecast unavailable",
-            }))
+        log.exception("flare forecast failed — preserving live artifacts")
+        _preserve_live_artifacts()
         return  # exit 0 — never break the v1 deploy
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUT_PATH.write_text(json.dumps(forecast, indent=1))

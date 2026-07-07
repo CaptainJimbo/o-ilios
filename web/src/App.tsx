@@ -35,7 +35,12 @@ export default function App() {
         .then((r) => r.json()).then(setMeta).catch(() => {})
       fetch(`${BASE}live/flares.json`)
         .then((r) => r.json())
-        .then((d: FlareData) => setFlares(d.regions ? d : null))
+        // Schema-strict: a soft-failed worker can publish a degraded file
+        // ({regions: [], error: ...}); bad data must never unmount the app.
+        .then((d: FlareData) =>
+          setFlares(
+            d && Array.isArray(d.regions) && d.full_disk && d.model ? d : null,
+          ))
         .catch(() => setFlares(null))
     }
     load()
