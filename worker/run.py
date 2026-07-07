@@ -46,6 +46,24 @@ OUT_DIR = Path("web/public/live")
 MASK_COLORS = {1: (0, 230, 255, 110), 2: (255, 190, 0, 110)}
 
 
+def _assert_sane_frame(wl: int, data: np.ndarray) -> None:
+    """Refuse half-written frames. JSOC rewrites mostrecent/ every ~15 min;
+    a fetch racing the writer can read garbage (observed 2026-07-07: a full
+    deploy of static). A real full-disk EUV frame has a bright disk against
+    dark corners; noise does not. Raising here aborts the CI run, which
+    keeps the previous good deploy live until the next cron self-heals."""
+    if data.shape != (1024, 1024):
+        raise ValueError(f"AIA {wl}: unexpected shape {data.shape}")
+    data = np.nan_to_num(data)
+    center = float(data[412:612, 412:612].mean())
+    corners = float(np.mean([data[:100, :100].mean(), data[:100, -100:].mean(),
+                             data[-100:, :100].mean(), data[-100:, -100:].mean()]))
+    if not center > 5 * max(corners, 1e-3):
+        raise ValueError(
+            f"AIA {wl}: no disk visible (center {center:.1f} vs corners "
+            f"{corners:.1f}) — likely a half-written mostrecent file")
+
+
 def fetch_latest() -> tuple[dict[int, np.ndarray], str, dict]:
     """Latest synoptic FITS arrays by wavelength, observation ISO time, and
     disk geometry as image fractions (north-up frame, for overlay layers
@@ -59,6 +77,7 @@ def fetch_latest() -> tuple[dict[int, np.ndarray], str, dict]:
         with fits.open(io.BytesIO(resp.content)) as hdul:
             hdu = hdul[-1]
             arrays[wl] = np.asarray(hdu.data, dtype=np.float32)
+            _assert_sane_frame(wl, arrays[wl])
             obs_time = obs_time or str(hdu.header.get("DATE-OBS", ""))
             if wl == 193:
                 h = hdu.header
