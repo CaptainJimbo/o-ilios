@@ -49,9 +49,20 @@ TAI_UTC_OFFSET_S = 37
 
 
 def fetch_sharps() -> list[dict]:
+    """Each currently-tracked HARP's newest record from the last 2 h.
+
+    The obvious query `[][$]` (all HARPs at the single latest T_REC) is
+    unstable: HARPs whose NRT processing lags a slot vanish from it, so the
+    region set — and the full-disk probability — jittered run to run
+    (observed 9 -> 2 regions in 20 minutes). A window + per-HARP newest
+    is stable against processing lag."""
+    now = datetime.now(timezone.utc) + timedelta(seconds=TAI_UTC_OFFSET_S)
+    start = now - timedelta(hours=2)
+    window = (f"{start:%Y.%m.%d_%H:%M:%S}_TAI-{now:%Y.%m.%d_%H:%M:%S}_TAI")
     keys = ",".join(META_KEYS + FEATURES)
     resp = requests.get(JSOC, params={
-        "op": "rs_list", "ds": "hmi.sharp_cea_720s_nrt[][$]", "key": keys,
+        "op": "rs_list", "ds": f"hmi.sharp_cea_720s_nrt[][{window}]",
+        "key": keys,
     }, timeout=60)
     resp.raise_for_status()
     payload = resp.json()  # HTML error pages raise here — caught by soft-fail
@@ -60,10 +71,17 @@ def fetch_sharps() -> list[dict]:
                            f"{payload.get('error', '?')}")
     count = payload.get("count", 0)
     columns = {kw["name"]: kw["values"] for kw in payload.get("keywords", [])}
-    return [
-        {name: values[i] for name, values in columns.items()}
-        for i in range(count)
-    ]
+    rows = [{name: values[i] for name, values in columns.items()}
+            for i in range(count)]
+    newest: dict[str, dict] = {}
+    for row in rows:
+        harp = row.get("HARPNUM")
+        if harp is None:
+            continue
+        if harp not in newest or str(row.get("T_REC", "")) > \
+                str(newest[harp].get("T_REC", "")):
+            newest[harp] = row
+    return list(newest.values())
 
 
 def parse_t_rec(t_rec: str) -> datetime:
@@ -109,7 +127,8 @@ def build_forecast() -> dict:
     records = fetch_sharps()
     log.info("NRT SHARPs at latest T_REC: %d", len(records))
 
-    t_rec_utc = parse_t_rec(records[0]["T_REC"]) if records else None
+    t_rec_utc = (max(parse_t_rec(r["T_REC"]) for r in records)
+                 if records else None)
     staleness_min = (
         round((datetime.now(timezone.utc) - t_rec_utc).total_seconds() / 60, 1)
         if t_rec_utc else None
