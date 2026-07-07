@@ -1,7 +1,12 @@
 {
-  "observation_time": "2026-07-06T20:12:45.349",
-  "generated_at": "2026-07-06T20:19:09.676412+00:00",
-  "coronal_hole_pct": 2.6,
-  "active_region_pct": 0.37,
+  "observation_time": "2026-07-07T08:24:57.349",
+  "generated_at": "2026-07-07T08:32:27.113382+00:00",
+  "disk": {
+    "cx_frac": 0.5,
+    "cy_frac": 0.5,
+    "r_frac": 0.38399
+  },
+  "coronal_hole_pct": 1.88,
+  "active_region_pct": 0.44,
   "source": "SDO/AIA via JSOC synoptic (NASA); segmentation: o-ilios U-Net"
 }

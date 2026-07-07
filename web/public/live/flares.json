@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-07-07T10:20:18.690294+00:00",
- "t_rec_utc": "2026-07-07T09:11:23+00:00",
- "staleness_min": 68.9,
+ "generated_at": "2026-07-07T10:26:50.949348+00:00",
+ "t_rec_utc": "2026-07-07T09:23:23+00:00",
+ "staleness_min": 63.5,
  "regions": [
   {
    "harpnum": 13728,
@@ -18,35 +18,13 @@
    "noaa_p_x": 5
   },
   {
-   "harpnum": 13712,
-   "noaa_ar": null,
-   "lat": 27.43,
-   "lon": 43.18,
-   "fx": 0.6074,
-   "fy": 0.42,
-   "p_m24": 0.001,
-   "alert": false,
-   "quality": "0x00000400"
-  },
-  {
-   "harpnum": 13714,
-   "noaa_ar": null,
-   "lat": 22.99,
-   "lon": 19.22,
-   "fx": 0.303,
-   "fy": 0.3364,
-   "p_m24": 0.001,
-   "alert": false,
-   "quality": "0x00000400"
-  },
-  {
    "harpnum": 13718,
    "noaa_ar": 14485,
-   "lat": -12.9,
-   "lon": 3.33,
-   "fx": 0.0567,
-   "fy": -0.2826,
-   "p_m24": 0.001,
+   "lat": -12.88,
+   "lon": 3.47,
+   "fx": 0.059,
+   "fy": -0.2823,
+   "p_m24": 0.0093,
    "alert": false,
    "quality": "0x00000400",
    "noaa_p_c": 10,
@@ -54,12 +32,34 @@
    "noaa_p_x": 1
   },
   {
+   "harpnum": 13712,
+   "noaa_ar": null,
+   "lat": 27.4,
+   "lon": 43.34,
+   "fx": 0.6093,
+   "fy": 0.4196,
+   "p_m24": 0.001,
+   "alert": false,
+   "quality": "0x00000400"
+  },
+  {
+   "harpnum": 13714,
+   "noaa_ar": null,
+   "lat": 23.0,
+   "lon": 19.3,
+   "fx": 0.3043,
+   "fy": 0.3365,
+   "p_m24": 0.001,
+   "alert": false,
+   "quality": "0x00000400"
+  },
+  {
    "harpnum": 13723,
    "noaa_ar": null,
-   "lat": -13.4,
-   "lon": -9.15,
-   "fx": -0.1547,
-   "fy": -0.2904,
+   "lat": -13.42,
+   "lon": -9.04,
+   "fx": -0.1529,
+   "fy": -0.2908,
    "p_m24": 0.001,
    "alert": false,
    "quality": "0x00000400"
@@ -68,9 +68,9 @@
    "harpnum": 13725,
    "noaa_ar": 14481,
    "lat": 13.98,
-   "lon": -15.51,
-   "fx": -0.2596,
-   "fy": 0.1835,
+   "lon": -15.4,
+   "fx": -0.2577,
+   "fy": 0.1836,
    "p_m24": 0.001,
    "alert": false,
    "quality": "0x00000400",
@@ -117,7 +117,7 @@
  ],
  "regions_skipped_limb_or_unusable": 1,
  "full_disk": {
-  "p_m24_any": 0.0486,
+  "p_m24_any": 0.0565,
   "noaa_p_m24_any": 0.2649
  },
  "model": {
