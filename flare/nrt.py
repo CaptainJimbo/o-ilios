@@ -139,41 +139,58 @@ def build_forecast() -> dict:
         log.warning("solar_regions.json unavailable: %s", err)
         noaa = {}
 
-    regions, skipped = [], 0
+    regions, raw_ps, skipped = [], [], 0
     for rec in records:
-        # QUALITY arrives as hex ("0x00011c00"); live NRT records routinely
-        # carry informational bits, so it is reported, not gated on —
-        # gating happens on limb distance and unusable features instead.
-        quality = str(rec.get("QUALITY", ""))
-        lon = to_float(rec.get("LON_FWT"))
-        lat = to_float(rec.get("LAT_FWT"))
-        x = np.array([[to_float(rec.get(f)) for f in FEATURES]],
-                     dtype=np.float32)
-        if (math.isnan(lon) or math.isnan(lat) or abs(lon) > MAX_ABS_LON
-                or np.isnan(x).sum() > len(FEATURES) // 2):
+        # Per-row isolation: one malformed record must degrade ONE badge,
+        # not abort the whole forecast into the preserve-stale path.
+        try:
+            # QUALITY arrives as hex ("0x00011c00"); live NRT records
+            # routinely carry informational bits, so it is reported, not
+            # gated on — gating is limb distance + unusable features.
+            quality = str(rec.get("QUALITY", ""))
+            lon = to_float(rec.get("LON_FWT"))
+            lat = to_float(rec.get("LAT_FWT"))
+            x = np.array([[to_float(rec.get(f)) for f in FEATURES]],
+                         dtype=np.float32)
+            if (math.isnan(lon) or math.isnan(lat) or abs(lon) > MAX_ABS_LON
+                    or np.isnan(x).sum() > len(FEATURES) // 2):
+                skipped += 1
+                continue
+            p_raw = float(predict_bundle(bundle, x)[0])
+            # Floor at 0.1% for DISPLAY: isotonic maps empty low bins to
+            # exactly 0, and "0.000% chance" claims more than data can.
+            # The full-disk product uses the raw values — flooring every
+            # term would build a ~1% quiet-day floor out of thin air.
+            p_m24 = max(p_raw, 0.001)
+            fx, fy = disk_fractions(lat, lon, to_float(rec.get("CRLT_OBS")))
+            # NB: NaN is truthy — `to_float(...) or 0` stays NaN. Check it.
+            noaa_ar_f = to_float(rec.get("NOAA_AR"))
+            noaa_ar = 0 if math.isnan(noaa_ar_f) else int(noaa_ar_f)
+            entry = {
+                "harpnum": int(to_float(rec.get("HARPNUM"))),
+                "noaa_ar": noaa_ar or None,
+                "lat": round(lat, 2), "lon": round(lon, 2),
+                "fx": round(fx, 4), "fy": round(fy, 4),
+                "p_m24": round(p_m24, 4),
+                "alert": bool(p_m24 >= bundle["threshold"]),
+                "quality": quality,
+            }
+            entry.update(noaa.get(noaa_ar % 10000, {}))
+        except Exception:
+            log.exception("skipping malformed SHARP record: %s",
+                          {k: rec.get(k) for k in ("HARPNUM", "T_REC")})
             skipped += 1
             continue
-        # Floor at 0.1%: isotonic maps empty low bins to exactly 0, and a
-        # literal "0.000% chance of a flare" claims more than data can.
-        p_m24 = max(float(predict_bundle(bundle, x)[0]), 0.001)
-        fx, fy = disk_fractions(lat, lon, to_float(rec.get("CRLT_OBS")))
-        noaa_ar = int(to_float(rec.get("NOAA_AR")) or 0)
-        entry = {
-            "harpnum": int(to_float(rec.get("HARPNUM"))),
-            "noaa_ar": noaa_ar or None,
-            "lat": round(lat, 2), "lon": round(lon, 2),
-            "fx": round(fx, 4), "fy": round(fy, 4),
-            "p_m24": round(p_m24, 4),
-            "alert": bool(p_m24 >= bundle["threshold"]),
-            "quality": quality,
-        }
-        entry.update(noaa.get(noaa_ar % 10000, {}))
         regions.append(entry)
+        raw_ps.append(p_raw)
 
-    p_any = 1.0 - float(np.prod([1.0 - r["p_m24"] for r in regions])) \
-        if regions else 0.0
-    noaa_ms = [r["noaa_p_m"] / 100 for r in regions
-               if isinstance(r.get("noaa_p_m"), (int, float))]
+    p_any = max(1.0 - float(np.prod([1.0 - p for p in raw_ps])), 0.001) \
+        if raw_ps else 0.0
+    # NOAA's number aggregates over EVERY region NOAA forecasts on disk —
+    # including ones our limb filter drops — otherwise "NOAA says X%"
+    # understates them on limb-active days.
+    noaa_ms = [row["noaa_p_m"] / 100 for row in noaa.values()
+               if isinstance(row.get("noaa_p_m"), (int, float))]
     noaa_any = 1.0 - float(np.prod([1.0 - p for p in noaa_ms])) \
         if noaa_ms else None
 

@@ -22,19 +22,25 @@ function stormLabel(kp: number | null): { label: string; alert: boolean } {
 }
 
 /** Newest non-null value of `field` in an RTSW feed (array of objects with
- * time_tag; not reliably sorted, so scan for the max timestamp). */
+ * time_tag; not reliably sorted, so scan for the max timestamp). Rows from
+ * the operational instrument (active: true) win over standby sources —
+ * e.g. ACE keeps reporting degraded densities alongside the active one. */
 const newest = (rows: Record<string, unknown>[] | null, field: string) => {
-  let bestTime = ''
-  let best: number | null = null
-  for (const row of rows ?? []) {
-    const v = row[field]
-    const t = String(row.time_tag ?? '')
-    if (typeof v === 'number' && t > bestTime) {
-      bestTime = t
-      best = v
+  const scan = (activeOnly: boolean) => {
+    let bestTime = ''
+    let best: number | null = null
+    for (const row of rows ?? []) {
+      if (activeOnly && row.active !== true) continue
+      const v = row[field]
+      const t = String(row.time_tag ?? '')
+      if (typeof v === 'number' && t > bestTime) {
+        bestTime = t
+        best = v
+      }
     }
+    return best
   }
-  return best
+  return scan(true) ?? scan(false)
 }
 
 export default function Conditions() {

@@ -10,8 +10,8 @@ writes it back into the artifact set. One entry per UTC day:
                                             SWPC's edited events (XRA rows)
 
 Verification data: https://services.swpc.noaa.gov/json/edited_events.json —
-official, AR-attributed, covers the recent week; M/X rows dated by begin
-time. Duplicate re-issues deduped on (begin, region).
+official, AR-attributed, spans roughly the trailing month; M/X rows dated
+by begin time. Duplicate re-issues deduped on (begin, region).
 """
 
 from __future__ import annotations
@@ -78,6 +78,8 @@ def update(forecast: dict) -> None:
     if today not in by_date:
         by_date[today] = {
             "date": today,
+            "recorded_at": datetime.now(timezone.utc).isoformat(
+                timespec="minutes"),
             "p_any": forecast["full_disk"]["p_m24_any"],
             "noaa_p_any": forecast["full_disk"]["noaa_p_m24_any"],
             "n_regions": len(forecast["regions"]),
@@ -95,11 +97,19 @@ def update(forecast: dict) -> None:
     # ~a week) — otherwise the day stays open rather than defaulting to
     # "no flare", which would silently bias the record quiet.
     feed_covers_from = min(flares) if flares else None
+    now = datetime.now(timezone.utc)
     for date_str, row in by_date.items():
         if "outcome_m_plus" in row or date_str >= today:
             continue
         if feed_covers_from is None or date_str <= feed_covers_from:
             continue  # strictly after the feed's earliest day (it may be cut)
+        # Don't close day D before D+1 12:00 UT: SWPC's edited list can
+        # ingest a late-evening flare hours after the fact, and outcomes
+        # are written once — closing early records real flares as misses.
+        close_after = datetime.fromisoformat(date_str).replace(
+            tzinfo=timezone.utc) + timedelta(hours=36)
+        if now < close_after:
+            continue
         day_flares = flares.get(date_str, [])
         row["outcome_m_plus"] = bool(day_flares)
         row["strongest"] = max(day_flares, default=None,

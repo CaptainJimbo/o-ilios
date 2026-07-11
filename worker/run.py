@@ -95,8 +95,11 @@ def fetch_latest() -> tuple[dict[int, np.ndarray], str, dict]:
             hdu = hdul[-1]
             arrays[wl] = np.asarray(hdu.data, dtype=np.float32)
             _assert_sane_frame(wl, arrays[wl], hdu.header)
-            obs_time = obs_time or str(hdu.header.get("DATE-OBS", ""))
+            # DATE-OBS from the 193 A frame — the primary display channel
+            # and the one whose geometry meta.json describes. (The three
+            # mostrecent files can straddle a rewrite by up to ~15 min.)
             if wl == 193:
+                obs_time = str(hdu.header.get("DATE-OBS", ""))
                 h = hdu.header
                 size = arrays[wl].shape[0]
                 # CRPIX is 1-indexed; the PNGs are flipud'd (north up), so

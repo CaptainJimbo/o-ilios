@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 /** WebGL view of the sun: three wavelength textures morphed by `mix`,
  * segmentation mask composited additively (luminous), with a raw/annotated
@@ -42,12 +42,41 @@ export interface SunView {
   showAR: boolean
 }
 
-export default function SunCanvas({ view, base }: { view: SunView; base: string }) {
+export default function SunCanvas({ view, base, obsTime }: {
+  view: SunView
+  base: string
+  /** meta.json observation_time — a change means fresh artifacts exist. */
+  obsTime?: string
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const uniformsRef = useRef<{
     gl: WebGL2RenderingContext
     set: (v: SunView) => void
+    reload: () => void
   } | null>(null)
+  // Bumped on GPU context restore to re-run the whole GL setup.
+  const [glEpoch, setGlEpoch] = useState(0)
+
+  // Unmount-only concerns: context-loss listeners + explicit release.
+  // (Separate from the setup effect: its cleanup also runs on glEpoch
+  // re-runs, and calling loseContext there would kill the context we are
+  // in the middle of restoring.)
+  useEffect(() => {
+    const canvas = canvasRef.current!
+    // Recover from GPU resets / mobile background eviction — otherwise the
+    // canvas stays permanently black (we have no rAF loop to notice).
+    const onLost = (e: Event) => e.preventDefault()
+    const onRestored = () => setGlEpoch((n) => n + 1)
+    canvas.addEventListener('webglcontextlost', onLost)
+    canvas.addEventListener('webglcontextrestored', onRestored)
+    return () => {
+      canvas.removeEventListener('webglcontextlost', onLost)
+      canvas.removeEventListener('webglcontextrestored', onRestored)
+      // NB: no eager loseContext() here — the canvas DOM node outlives a
+      // StrictMode/HMR remount cycle, and poisoning its context breaks the
+      // next setup. Browsers evict surplus contexts oldest-first anyway.
+    }
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current!
@@ -111,10 +140,16 @@ export default function SunCanvas({ view, base }: { view: SunView; base: string 
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
     }
 
-    loadTexture(0, `${base}live/sun_171.png`, 'uSun171')
-    loadTexture(1, `${base}live/sun_193.png`, 'uSun193')
-    loadTexture(2, `${base}live/sun_304.png`, 'uSun304')
-    loadTexture(3, `${base}live/mask.png`, 'uMask')
+    // Cache-bust texture loads: Pages pins assets for 600 s, and the whole
+    // point of this canvas is that the sun is CURRENT.
+    const loadAll = () => {
+      const bust = `?t=${Date.now()}`
+      loadTexture(0, `${base}live/sun_171.png${bust}`, 'uSun171')
+      loadTexture(1, `${base}live/sun_193.png${bust}`, 'uSun193')
+      loadTexture(2, `${base}live/sun_304.png${bust}`, 'uSun304')
+      loadTexture(3, `${base}live/mask.png${bust}`, 'uMask')
+    }
+    loadAll()
 
     uniformsRef.current = {
       gl,
@@ -122,15 +157,22 @@ export default function SunCanvas({ view, base }: { view: SunView; base: string 
         current = v
         draw()
       },
+      reload: loadAll,
     }
     const observer = new ResizeObserver(draw)
     observer.observe(canvas)
     return () => observer.disconnect()
-  }, [base])
+  }, [base, glEpoch])
 
   useEffect(() => {
     uniformsRef.current?.set(view)
   }, [view])
+
+  // New observation time -> the worker published fresh artifacts. Reload
+  // textures in place (the tab stays "living" without a page reload).
+  useEffect(() => {
+    if (obsTime) uniformsRef.current?.reload()
+  }, [obsTime])
 
   return <canvas ref={canvasRef} className="sun-canvas" aria-label="Live sun" />
 }

@@ -40,9 +40,12 @@ export default function App() {
         .then((r) => r.json())
         // Schema-strict: a soft-failed worker can publish a degraded file
         // ({regions: [], error: ...}); bad data must never unmount the app.
+        // Validate exactly what the render dereferences.
         .then((d: FlareData) =>
           setFlares(
-            d && Array.isArray(d.regions) && d.full_disk && d.model ? d : null,
+            d && Array.isArray(d.regions)
+              && typeof d.full_disk?.p_m24_any === 'number'
+              && typeof d.model?.test_tss_p5 === 'number' ? d : null,
           ))
         .catch(() => setFlares(null))
     }
@@ -109,8 +112,12 @@ export default function App() {
                   {flares.full_disk.noaa_p_m24_any === null
                     ? '—'
                     : `${Math.round(flares.full_disk.noaa_p_m24_any * 100)}%`}
-                  {flares.staleness_min !== null
-                    && flares.staleness_min > 240 && ' · STALE'}
+                  {/* Staleness computed HERE from the observation time — the
+                      artifact's own staleness_min freezes when an outage
+                      makes the worker republish old data. */}
+                  {flares.t_rec_utc
+                    && Date.now() - Date.parse(flares.t_rec_utc) > 240 * 60000
+                    && ' · STALE'}
                 </span>
                 <span className="flare-noaa-line">
                   LightGBM · TSS {flares.model.test_tss_p5.toFixed(2)} · BSS{' '}
@@ -126,7 +133,7 @@ export default function App() {
         <div className="sun-halo" aria-hidden="true" />
         {mode === 'live' ? (
           <div className="sun-frame">
-            <SunCanvas view={view} base={BASE} />
+            <SunCanvas view={view} base={BASE} obsTime={meta?.observation_time} />
             {showFlares && flares && meta?.disk && flares.regions.length > 0 && (
               <FlareWatch data={flares} disk={meta.disk} />
             )}
